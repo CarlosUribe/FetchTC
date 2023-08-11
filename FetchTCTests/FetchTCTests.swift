@@ -10,27 +10,67 @@ import XCTest
 
 final class FetchTCTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    var requestMain: MainModel!
+    var requestDetail: DetailModel!
+    var failureRequestDetail: DetailModel!
+    let idMeal = "53049"
+    let mealName = "Apam balik"
+
+    override func setUp() {
+        requestMain = MainModel()
+        requestDetail = DetailModel(idMeal)
+        failureRequestDetail = DetailModel("")
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
+    func testGetDataForMainSecreenSuccess() {
+        let expectation = expectation(description: "Request data for main screen should be successful")
+        requestMain.getDataForMainScreen { result in
+            switch result {
+            case .success(let meal):
+                let elemet = meal.first
+                XCTAssertTrue(elemet?.idMeal == self.idMeal)
+                XCTAssertTrue(elemet?.strMeal == self.mealName)
+            case .failure(let error):
+                XCTFail("Backend should respond correctly, failed with \(error.localizedDescription)")
+            }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+            expectation.fulfill()
         }
+
+        wait(for: [expectation], timeout: 10.0)
+
     }
 
+    func testGetDetailForDetailScreenSuccess() {
+        let expectation = expectation(description: "Request data for detail screen should be successful")
+        requestDetail.getDataForDetailScreen { result in
+            switch result {
+            case .success(let data):
+                XCTAssertTrue(data["idMeal"] == self.idMeal)
+                XCTAssertTrue(data["strMeal"] == self.mealName)
+            case .failure(let error):
+                XCTFail("Backend should respond correctly, failed with \(error.localizedDescription)")
+            }
+
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 10.0)
+    }
+
+    func testGetDetailForDetailScreenFailure() {
+        let expectation = expectation(description: "Request data for detail screen should fail without correct meal id")
+        failureRequestDetail.getDataForDetailScreen { result in
+            switch result {
+            case .success(_):
+                XCTFail("Backend should fail")
+            case .failure(let error):
+                XCTAssertTrue(error == BackendError.DataError)
+            }
+
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 10.0)
+    }
 }
